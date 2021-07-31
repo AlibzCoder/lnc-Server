@@ -7,6 +7,7 @@ const cp = require('cookie-parser');
 const initDB = require('./mongo')
 
 
+
 const PORT = 5000
 //Creates The Express App Object
 const app = express()
@@ -38,3 +39,7 @@ server.listen(PORT,()=>{console.log(`Server listening on port ${PORT}`)});
 
 // Logging Middleware
 app.use(morgan('dev'))
+
+
+require('./connections')(server)
+

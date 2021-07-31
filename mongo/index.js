@@ -5,7 +5,7 @@ module.exports = function initDB() {
     var DATABASE_USERNAME = 'lnc';
     var DATABASE_PASSWORD = '1234';
     mongoose.connect(
-        `mongodb://${DATABASE_USERNAME}:${DATABASE_PASSWORD}@${HOST_NAME}/${DATABASE_NAME}`,
+        `mongodb://${DATABASE_USERNAME}:${DATABASE_PASSWORD}@${HOST_NAME}/${DATABASE_NAME}?replicaSet=rs0`,
         {
             useNewUrlParser: true,
             useCreateIndex: true,
