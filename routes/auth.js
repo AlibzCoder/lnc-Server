@@ -69,22 +69,16 @@ router.post('/login', (req, res) => {
 
 router.post('/refreshToken', (req, res) => {
     var refreshToken = req.headers['refreshtoken'];
-    jwt.verify(refreshToken, config.secretRefreshKey, (err, payload) => {
+    jwt.verify(refreshToken, refreshSecret, (err, payload) => {
         if (err) {
             return res.sendStatus(401);
         }
-        payload.exp = Math.floor(Date.now() / 1000) + config.expiresIn
-        const token = jwt.sign(payload, config.secretKey);
+        payload.exp = Math.floor(Date.now() / 1000) + expiresIn
+        const token = jwt.sign(payload, secret);
         return res.status(200).json({ Authorization: token });
     });
 
 });
-
-
-router.get('/profile', checkAuthMiddleware, (req, res) => {
-    return res.status(200).json({ message: "you're fine" })
-})
-
 
 
 

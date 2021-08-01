@@ -1,20 +1,11 @@
 const SocketIO = require("socket.io");
-var jwtAuth = require('socketio-jwt-auth');
-const { secret } = require('../consts');
 const user = require("../models/user");
+const socketIOMiddleware = require('./middleware');
 
 module.exports = server => {
 
     const io = new SocketIO.Server(server, { cors: { origin: '*' } });
-    io.use(jwtAuth.authenticate({ secret: secret, succeedWithoutToken: false }, (payload, done) => {
-        if (payload && payload.data.id) {
-            user.findOne({ _id: payload.data.id }, '_id', function (err, user) {
-                if (err) return done(err);
-                if (!user) return done(null, false, 'user does not exist')
-                return done(null, user);
-            });
-        } else return done()
-    }));
+    io.use(socketIOMiddleware)
 
     let Users = {};
     // get All Users
@@ -41,28 +32,33 @@ module.exports = server => {
 
 
 
+
+
+
+
+
     io.on('connection', socket => {
-        console.log('new connection')
-        if (socket.request.user) {
-            const { _id, name, userName } = Users[socket.request.user._id];
+        console.log('new connection',socket.token_payload)
+        if (socket.token_payload) {
+            const { _id, name, userName } = Users[socket.token_payload.data.id];
 
             if ('activeSockets' in Users[_id] && Users[_id].activeSockets) {
                 Users[_id].activeSockets.push(socket.id)
             } else Users[_id].activeSockets = [socket.id]
-            
 
 
-            socket.once('getAllUsers',()=>getAllUsers(socket))
+
+            socket.once('getAllUsers', () => getAllUsers(socket))
 
 
-            
+
 
             socket.on('disconnect', async () => {
                 var socketIdIndex = Users[_id].activeSockets.indexOf(socket.id);
                 if (socketIdIndex !== -1) { Users[_id].activeSockets.splice(socketIdIndex, 1) }
 
                 if (Users[_id].activeSockets.length === 0) {
-                    await user.updateOne({_id:_id}, {$set:{lastTimeActive:new Date()}}, { upsert: false })
+                    await user.updateOne({ _id: _id }, { $set: { lastTimeActive: new Date() } }, { upsert: false })
                 }
             });
         }
@@ -70,14 +66,16 @@ module.exports = server => {
 
 
 
-    const getAllUsers = socket =>{
+    const getAllUsers = socket => {
         const u = {}
-        for(let i in Users){
-            const {_id,userName,...userInfo} = Users[i];
+        for (let i in Users) {
+            const {userName,...userInfo} = Users[i]._doc;
             u[userName] = userInfo;
         }
-        socket.send(u);
+        socket.emit('users',u);
     }
+
+
 
 }
 
