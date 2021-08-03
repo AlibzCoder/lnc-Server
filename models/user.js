@@ -1,8 +1,14 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 const UserSchema = new Schema({
-    name: String,
-    lastTimeActive:Date,
+    name: {
+        type:String,
+        default: '',
+    },
+    lastTimeActive:{
+        type:Date,
+        default: null,
+    },
     userName: {
         type: String,
         required: true,

@@ -10,7 +10,10 @@ module.exports = server => {
     let Users = {};
     // get All Users
     user.find({}, '_id userName name lastTimeActive', (err, _users) => {
-        _users.forEach(_u => Users[_u._id] = _u)
+        _users.forEach(_u => {
+            _u.isOnline = false;
+            Users[_u._id] = _u
+        })
     });
     // Updates the Users Object when it changes in the database
     // using mongo , the replicaSet option should be turned on
@@ -18,13 +21,24 @@ module.exports = server => {
     usersChangeStream.on("change", next => {
         const { operationType, documentKey, fullDocument, updateDescription } = next
         switch (operationType) {
-            case 'delete': delete Users[documentKey._id]; break;
+            case 'delete': 
+                delete Users[documentKey._id];
+                io.local.emit('usersChange',{action: 'USER_REMOVED',id: documentKey._id})
+                break;
             case 'insert':
-                Users[documentKey._id] = fullDocument; break;
+                Users[documentKey._id] = fullDocument;
+                const { _id, userName, name, lastTimeActive } = fullDocument;
+                io.local.emit('usersChange',{
+                    action: 'USER_ADDED',
+                    id: documentKey._id,
+                    fields:{_id,userName,name,lastTimeActive,isOnline:false}
+                })
+                break;
             case 'update':
                 const { updatedFields, removedFields } = updateDescription;
                 for (let i in updatedFields) { Users[documentKey._id][i] = updatedFields[i] }
-                for (let i in removedFields) { delete Users[documentKey._id][removedFields[i]] }
+                io.local.emit('usersChange',{action: 'USER_UPDATE',id: documentKey._id,fields:updatedFields})
+                //for (let i in removedFields) { delete Users[documentKey._id][removedFields[i]] }
                 break;
         }
     });
@@ -38,24 +52,25 @@ module.exports = server => {
 
 
     io.on('connection', socket => {
-        console.log('new connection',socket.token_payload)
+        console.log('new connection', socket.token_payload)
         if (socket.token_payload) {
             const { _id, name, userName } = Users[socket.token_payload.data.id];
 
             if ('activeSockets' in Users[_id] && Users[_id].activeSockets) {
                 Users[_id].activeSockets.push(socket.id)
             } else Users[_id].activeSockets = [socket.id]
-
+            isOnline(socket,Users[_id])
 
 
             socket.once('getAllUsers', () => getAllUsers(socket))
 
 
-
+            
 
             socket.on('disconnect', async () => {
                 var socketIdIndex = Users[_id].activeSockets.indexOf(socket.id);
                 if (socketIdIndex !== -1) { Users[_id].activeSockets.splice(socketIdIndex, 1) }
+                isOnline(socket,Users[_id])
 
                 if (Users[_id].activeSockets.length === 0) {
                     await user.updateOne({ _id: _id }, { $set: { lastTimeActive: new Date() } }, { upsert: false })
@@ -67,14 +82,25 @@ module.exports = server => {
 
 
     const getAllUsers = socket => {
-        const u = {}
+        const u = []
         for (let i in Users) {
-            const {userName,...userInfo} = Users[i]._doc;
-            u[userName] = userInfo;
+            const { _id, userName, name, lastTimeActive, isOnline } = Users[i];
+            if (socket.token_payload.data.id !== i)
+                u.push({ _id, userName, name, lastTimeActive, isOnline })
         }
-        socket.emit('users',u);
+        socket.emit('users', u);
     }
 
+    const isOnline = (socket,user) => {
+        if (user.activeSockets && user.activeSockets.length > 0) {
+            user.isOnline = true;
+        } else user.isOnline = false;
+
+        socket.broadcast.emit('usersChange',{
+            action: user.isOnline ? 'USER_ONLINE' : 'USER_OFFLINE',
+            id: user._id
+        })
+    }
 
 
 }
