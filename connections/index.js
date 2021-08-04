@@ -23,13 +23,13 @@ module.exports = server => {
         switch (operationType) {
             case 'delete': 
                 delete Users[documentKey._id];
-                io.local.emit('usersChange',{action: 'USER_REMOVED',id: documentKey._id})
+                io.local.emit('usersChange',{type: 'USER_REMOVED',id: documentKey._id})
                 break;
             case 'insert':
                 Users[documentKey._id] = fullDocument;
                 const { _id, userName, name, lastTimeActive } = fullDocument;
                 io.local.emit('usersChange',{
-                    action: 'USER_ADDED',
+                    type: 'USER_ADDED',
                     id: documentKey._id,
                     fields:{_id,userName,name,lastTimeActive,isOnline:false}
                 })
@@ -37,7 +37,7 @@ module.exports = server => {
             case 'update':
                 const { updatedFields, removedFields } = updateDescription;
                 for (let i in updatedFields) { Users[documentKey._id][i] = updatedFields[i] }
-                io.local.emit('usersChange',{action: 'USER_UPDATE',id: documentKey._id,fields:updatedFields})
+                io.local.emit('usersChange',{type: 'USER_UPDATE',id: documentKey._id,fields:updatedFields})
                 //for (let i in removedFields) { delete Users[documentKey._id][removedFields[i]] }
                 break;
         }
@@ -97,7 +97,7 @@ module.exports = server => {
         } else user.isOnline = false;
 
         socket.broadcast.emit('usersChange',{
-            action: user.isOnline ? 'USER_ONLINE' : 'USER_OFFLINE',
+            type: user.isOnline ? 'USER_ONLINE' : 'USER_OFFLINE',
             id: user._id
         })
     }
