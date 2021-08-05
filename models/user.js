@@ -5,6 +5,14 @@ const UserSchema = new Schema({
         type:String,
         default: '',
     },
+    description: {
+        type:String,
+        default: '',
+    },
+    profileImgVersion:{
+        type:Number,
+        default: 0,
+    },
     lastTimeActive:{
         type:Date,
         default: null,

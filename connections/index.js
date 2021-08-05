@@ -9,7 +9,7 @@ module.exports = server => {
 
     let Users = {};
     // get All Users
-    user.find({}, '_id userName name lastTimeActive', (err, _users) => {
+    user.find({}, '_id userName name profileImgVersion description lastTimeActive', (err, _users) => {
         _users.forEach(_u => {
             _u.isOnline = false;
             Users[_u._id] = _u
@@ -27,11 +27,11 @@ module.exports = server => {
                 break;
             case 'insert':
                 Users[documentKey._id] = fullDocument;
-                const { _id, userName, name, lastTimeActive } = fullDocument;
+                const { _id, userName, name,profileImgVersion,description, lastTimeActive } = fullDocument;
                 io.local.emit('usersChange',{
                     type: 'USER_ADDED',
                     id: documentKey._id,
-                    fields:{_id,userName,name,lastTimeActive,isOnline:false}
+                    fields:{_id,userName,name,profileImgVersion,description,lastTimeActive,isOnline:false}
                 })
                 break;
             case 'update':
@@ -84,9 +84,9 @@ module.exports = server => {
     const getAllUsers = socket => {
         const u = []
         for (let i in Users) {
-            const { _id, userName, name, lastTimeActive, isOnline } = Users[i];
+            const { _id, userName, name,profileImgVersion ,description, lastTimeActive, isOnline } = Users[i];
             if (socket.token_payload.data.id !== i)
-                u.push({ _id, userName, name, lastTimeActive, isOnline })
+                u.push({ _id, userName, name,profileImgVersion ,description, lastTimeActive, isOnline })
         }
         socket.emit('users', u);
     }
