@@ -4,7 +4,8 @@ const cors = require('cors')
 const morgan = require('morgan')
 const bp = require('body-parser');
 const cp = require('cookie-parser');
-const initDB = require('./mongo')
+const initDB = require('./mongo');
+const { ImgsDir } = require('./consts');
 
 
 
@@ -19,7 +20,8 @@ app.use(cors())
 initDB()
 
 // Serves static files in the public folder
-app.use(express.static('public'))
+app.use('/imgs',express.static(ImgsDir))
+
 
 // Parse Requests
 app.use(bp.json());

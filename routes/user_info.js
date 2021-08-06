@@ -6,6 +6,7 @@ let multer = require('multer');
 var { promisify } = require('util');
 var sizeOf = promisify(require('image-size'));
 const fs = require("fs");
+const { tempDir, ImgsDir } = require('../consts');
 
 
 //Initializes an instance of the Router class.
@@ -13,10 +14,6 @@ const router = require('express').Router()
 
 router.use(checkAuthMiddleware)
 
-
-
-const tempImgDIR = './public/images/temp/';
-const profileImgDIR = './public/images/profiles/';
 
 
 
@@ -57,7 +54,7 @@ router.post('/editProfile',
 
 var ImageUpload = multer({
     storage: multer.diskStorage({
-        destination: (req, file, cb) => cb(null, tempImgDIR),
+        destination: (req, file, cb) => cb(null, tempDir),
         filename: (req, file, cb) => cb(null, `${req.tokenPayload.data.id}.jpg`)
     }),
     fileFilter: (req, file, cb) => {
@@ -92,10 +89,10 @@ router.post('/uploadProfileImage', (req, res) => {
         if (!req.file) return res.status(400).send('No File Provided')
 
 
-        sizeOf(`${tempImgDIR}${req.tokenPayload.data.id}.jpg`)
+        sizeOf(`${tempDir}${req.tokenPayload.data.id}.jpg`)
             .then(dimensions => {
                 if(dimensions.width === dimensions.height){
-                    fs.rename(`${tempImgDIR}${req.tokenPayload.data.id}.jpg`,`${profileImgDIR}${req.tokenPayload.data.id}.jpg`,
+                    fs.rename(`${tempDir}${req.tokenPayload.data.id}.jpg`,`${ImgsDir}${req.tokenPayload.data.id}.jpg`,
                         err=>{
                             if(err)return res.status(500).send();
                             User.findOne({ _id: req.tokenPayload.data.id }, (err, user) => {
@@ -106,7 +103,7 @@ router.post('/uploadProfileImage', (req, res) => {
                             });
                         })
                 }else{
-                    fs.unlink(`${tempImgDIR}${req.tokenPayload.data.id}.jpg`, err => console.log(err));
+                    fs.unlink(`${tempDir}${req.tokenPayload.data.id}.jpg`, err => console.log(err));
                     return res.status(400).send('Image Aspect Ratio Should Be 1/1')
                 }
             }).catch(err => {console.error(err);return res.status(500).send()});
