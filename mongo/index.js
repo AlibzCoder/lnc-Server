@@ -1,5 +1,5 @@
 var mongoose = require('mongoose');
-module.exports = function initDB() {
+module.exports = initDB = callback => {
     var HOST_NAME = '127.0.0.1';
     var DATABASE_NAME = 'lncDB';
     var DATABASE_USERNAME = 'lnc';
@@ -11,5 +11,5 @@ module.exports = function initDB() {
             useCreateIndex: true,
             useUnifiedTopology:true
         }
-    ).then(()=>{console.log('Connected To Mongo')});
+    ).then(callback).catch(()=>console.log('Unable To Connect To Database'));
 }

@@ -16,9 +16,6 @@ const app = express()
 // Disable All CORS Request
 app.use(cors())
 
-// Connect to mongo
-initDB()
-
 // Serves static files in the public folder
 app.use('/imgs',express.static(ImgsDir))
 
@@ -43,5 +40,12 @@ server.listen(PORT,()=>{console.log(`Server listening on port ${PORT}`)});
 app.use(morgan('dev'))
 
 
-require('./connections')(server)
+// Connect to mongo
+initDB(()=>{
+    console.log('connected to database')
+    require('./connections')(server)
+})
+
+
+
 
