@@ -64,8 +64,9 @@ module.exports = server => {
 
             socket.once('getAllUsers', () => getAllUsers(socket))
 
-            socket.on('offer',data=>passSDP('offer',_id,data))
-            socket.on('answer',data=>passSDP('answer',_id,data))
+            socket.on('offer',data=>passData('offer',_id,data))
+            socket.on('answer',data=>passData('answer',_id,data))
+            socket.on('candidate',data=>passData('candidate',_id,data))
             
 
             socket.on('disconnect', async () => {
@@ -105,11 +106,12 @@ module.exports = server => {
     }
 
 
-    const passSDP = (action,from,data)=>{
+    const passData = (action,from,data)=>{
         //TODO Handle Multiple Devices Peer Connections
         let d = {from:from}
         d[action] = data[action]
-        io.to(Users[data.to].activeSockets[0]).emit(action,d)
+        if(Users[data.to]&&"activeSockets" in Users[data.to])
+            io.to(Users[data.to].activeSockets[0]).emit(action,d)
     }
 
 
